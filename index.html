@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web会議 文字起こし＋要約アプリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Web会議 文字起こし＋要約アプリ</h1>
+            <p class="subtitle">GPT-4o Audio APIを使用した自動文字起こしと要約</p>
+        </header>
+
+        <main>
+            <section class="api-key-section">
+                <h2>API設定</h2>
+                <div class="api-key-input">
+                    <label for="apiKey">OpenAI API Key:</label>
+                    <input type="password" id="apiKey" placeholder="sk-..." />
+                    <button id="saveApiKey">保存</button>
+                </div>
+                <div id="apiKeyStatus" class="status-message"></div>
+                
+                <div class="notion-settings">
+                    <h3>Notion連携（オプション）</h3>
+                    <div class="api-key-input">
+                        <label for="notionToken">Notion Token:</label>
+                        <input type="password" id="notionToken" placeholder="ntn_..." />
+                    </div>
+                    <div class="api-key-input">
+                        <label for="notionDatabaseId">Database ID:</label>
+                        <input type="text" id="notionDatabaseId" placeholder="Database ID" />
+                        <button id="saveNotionSettings">保存</button>
+                    </div>
+                    <div id="notionStatus" class="status-message"></div>
+                </div>
+            </section>
+
+            <section class="recording-section">
+                <h2>録音コントロール</h2>
+                <div class="audio-source-select">
+                    <label for="audioSource">音声ソース:</label>
+                    <select id="audioSource">
+                        <option value="microphone">マイク</option>
+                        <option value="screen">画面共有音声（Google Meet等）</option>
+                        <option value="both">マイク＋画面共有音声</option>
+                    </select>
+                </div>
+                <div class="recording-instructions">
+                    <div id="instructionText" class="instruction-text">
+                        <strong>📝 使用方法:</strong><br>
+                        1. 音声ソースを選択<br>
+                        2. 録音開始をクリック<br>
+                        3. 画面共有ダイアログでGoogle Meetのタブを選択<br>
+                        4. <strong>「音声を共有」に必ずチェック</strong>を入れてください
+                    </div>
+                </div>
+                <div class="controls">
+                    <button id="startRecording" class="btn-primary">録音開始</button>
+                    <button id="stopRecording" class="btn-secondary" disabled>録音停止</button>
+                    <button id="pauseRecording" class="btn-secondary" disabled>一時停止</button>
+                </div>
+                <div class="recording-status">
+                    <span id="recordingStatus">待機中</span>
+                    <span id="recordingTime">00:00</span>
+                </div>
+                <div class="audio-visualizer">
+                    <canvas id="visualizer" width="600" height="100"></canvas>
+                </div>
+            </section>
+
+            <section class="processing-section">
+                <h2>処理オプション</h2>
+                <div class="processing-options">
+                    <label>
+                        <input type="checkbox" id="autoTranscribe" checked>
+                        録音停止後に自動で文字起こし
+                    </label>
+                    <label>
+                        <input type="checkbox" id="autoSummarize" checked>
+                        文字起こし後に自動で要約
+                    </label>
+                    <label>
+                        <input type="checkbox" id="autoSaveToNotion" checked>
+                        Notionに自動保存
+                    </label>
+                </div>
+                <div class="language-select">
+                    <label for="language">言語:</label>
+                    <select id="language">
+                        <option value="ja" selected>日本語</option>
+                        <option value="en">英語</option>
+                        <option value="auto">自動検出</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="results-section">
+                <h2>結果</h2>
+                
+                <div class="result-tabs">
+                    <button class="tab-button active" data-tab="transcription">文字起こし</button>
+                    <button class="tab-button" data-tab="summary">要約</button>
+                </div>
+
+                <div id="transcriptionTab" class="tab-content active">
+                    <div class="result-header">
+                        <h3>文字起こし結果</h3>
+                        <button id="copyTranscription" class="btn-small">コピー</button>
+                        <button id="downloadTranscription" class="btn-small">ダウンロード</button>
+                    </div>
+                    <div id="transcriptionResult" class="result-content">
+                        <p class="placeholder">録音が完了すると、ここに文字起こし結果が表示されます。</p>
+                    </div>
+                </div>
+
+                <div id="summaryTab" class="tab-content">
+                    <div class="result-header">
+                        <h3>要約結果</h3>
+                        <button id="copySummary" class="btn-small">コピー</button>
+                        <button id="downloadSummary" class="btn-small">ダウンロード</button>
+                    </div>
+                    <div id="summaryResult" class="result-content">
+                        <p class="placeholder">文字起こしが完了すると、ここに要約結果が表示されます。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="history-section">
+                <h2>履歴</h2>
+                <div id="historyList" class="history-list">
+                    <p class="placeholder">録音履歴がここに表示されます。</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Web会議文字起こしアプリ</p>
+        </footer>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loadingMessage">処理中...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

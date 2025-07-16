@@ -1,0 +1,56 @@
+{
+  "name": "meeting-transcription-app",
+  "version": "3.1.0",
+  "description": "Web会議の音声を自動で文字起こし・要約・Notion保存するデスクトップアプリ",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:browser": "node proxy-server.js",
+    "build": "electron-builder",
+    "dist": "electron-builder --mac --win --linux"
+  },
+  "keywords": [
+    "meeting",
+    "transcription",
+    "notion",
+    "gpt-4",
+    "electron"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "canvas": "^3.1.2",
+    "electron": "^26.6.10",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.meeting-transcription",
+    "productName": "会議文字起こしアプリ",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/*.ts",
+      "!*.md",
+      "!dist"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}
