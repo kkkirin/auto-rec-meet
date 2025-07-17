@@ -974,7 +974,23 @@ class MeetingTranscriptionApp {
                 }
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorText = await response.text();
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            if (errorJson.error && errorJson.error.message) {
+                                errorMessage += ` - ${errorJson.error.message}`;
+                            } else {
+                                errorMessage += ` - ${errorText}`;
+                            }
+                        } catch (_) {
+                            errorMessage += ` - ${errorText}`;
+                        }
+                    } catch (_) {
+                        // ignore parse errors
+                    }
+                    throw new Error(errorMessage);
                 }
                 
                 return response;
