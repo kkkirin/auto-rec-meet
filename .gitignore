@@ -1,0 +1,84 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# API Keys and Secrets
+secure-storage.json
+*.env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug files
+debug/
+debug_*.webm
+debug_*.wav
+debug_*.mp3
+debug_*.mp4
+debug_*.json
+
+# Build outputs
+dist/
+build/
+out/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Temporary files
+tmp/
+temp/
+
+# Electron build files
+app/
+release/
+
+# FFmpeg temporary files
+*.temp.mp3
+*.temp.wav
+
+# Recording files (if you want to exclude user recordings)
+recordings/
+output/
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon
+
+# Application data (Electron userData directory is typically not in project folder)
+# But in case someone copies files here:
+userData/

@@ -43,6 +43,7 @@
                 <div class="audio-source-select">
                     <label for="audioSource">音声ソース:</label>
                     <select id="audioSource">
+                        <option value="separate">🎤 別々録音（マイクと相手を分離）</option>
                         <option value="microphone">マイク</option>
                         <option value="screen">画面共有音声（Google Meet等）</option>
                         <option value="both">マイク＋画面共有音声</option>
@@ -50,17 +51,19 @@
                 </div>
                 <div class="recording-instructions">
                     <div id="instructionText" class="instruction-text">
-                        <strong>📝 使用方法:</strong><br>
-                        1. 音声ソースを選択<br>
-                        2. 録音開始をクリック<br>
-                        3. 画面共有ダイアログでGoogle Meetのタブを選択<br>
-                        4. <strong>「音声を共有」に必ずチェック</strong>を入れてください
+                        <strong>📝 別々録音の使用方法:</strong><br>
+                        1. <strong>Google Meet会議に参加</strong>してから録音開始<br>
+                        2. 画面共有ダイアログで<strong>「Google Meetのウィンドウ」</strong>を選択<br>
+                        3. <strong>「音声を共有」に必ずチェック</strong>を入れる<br>
+                        4. マイクに向かって話す（自分の音声）<br>
+                        5. <strong>会議終了時に手動で録音停止</strong>
                     </div>
                 </div>
                 <div class="controls">
                     <button id="startRecording" class="btn-primary">録音開始</button>
                     <button id="stopRecording" class="btn-secondary" disabled>録音停止</button>
                     <button id="pauseRecording" class="btn-secondary" disabled>一時停止</button>
+                    <button id="downloadAudio" class="btn-download" disabled>💾 音声ダウンロード</button>
                 </div>
                 <div class="recording-status">
                     <span id="recordingStatus">待機中</span>

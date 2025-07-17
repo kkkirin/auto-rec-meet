@@ -40,6 +40,23 @@ npm run start:browser
 
 ## 🛠️ 開発環境での実行
 
+### 1. 環境変数の設定
+
+```bash
+# .env.example を .env にコピーして編集
+cp .env.example .env
+# または手動で .env ファイルを作成
+```
+
+`.env` ファイルに以下を設定：
+```bash
+OPENAI_API_KEY=sk-your-actual-api-key-here
+NOTION_TOKEN=ntn_your-notion-token-here  # オプション
+NOTION_DATABASE_ID=your-database-id-here # オプション
+```
+
+### 2. アプリの実行
+
 ```bash
 # 依存関係をインストール
 npm install
@@ -50,6 +67,10 @@ npm start
 # ブラウザ版として実行
 npm run start:browser
 ```
+
+**⚠️ 重要**: 
+- `.env` ファイルには実際のAPIキーが含まれるため、gitにコミットしないでください
+- APIキーはアプリ内でAES-256-GCMで暗号化されて保存されます
 
 ## 🔧 ビルド方法
 
@@ -87,9 +108,36 @@ npm run dist
 
 ## 🔐 セキュリティ機能
 
+### データ保護
 - **暗号化ストレージ**: APIキーは AES-256-GCM で暗号化
 - **マシン固有キー**: 各デバイス固有の暗号化キーを使用
 - **CORS対応**: ブラウザ版でもセキュアなAPI通信
+
+### 除外されるファイル（.gitignore）
+```
+# APIキーなどの機密データ
+secure-storage.json
+*.env
+.env
+
+# デバッグファイル
+debug/
+debug_*.webm
+debug_*.wav
+debug_*.mp3
+
+# 依存関係
+node_modules/
+```
+
+### APIキーの保存場所
+- **Electronアプリ**: `~/.config/会議文字起こしアプリ/secure-storage.json` (暗号化済み)
+- **開発環境**: `.env` ファイル (gitignoreで除外)
+
+**⚠️ セキュリティ注意事項**:
+1. APIキーを含む `.env` ファイルをgitにコミットしない
+2. `secure-storage.json` は暗号化されているが、バックアップ時は注意
+3. デバッグファイルには録音データが含まれる可能性があるため共有しない
 
 ## 📁 プロジェクト構造
 

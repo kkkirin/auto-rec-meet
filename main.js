@@ -549,34 +549,131 @@ ipcMain.handle('get-desktop-sources', async () => {
     }
 });
 
+// 画面共有ウィンドウの監視
+let screenCaptureWatcher = null;
+let screenCaptureFailCount = 0; // 連続失敗回数
+
+ipcMain.handle('start-screen-capture-monitoring', async (event, sourceId) => {
+    try {
+        console.log('🔍 画面共有ウィンドウの監視を開始:', sourceId);
+        
+        // 既存の監視を停止
+        if (screenCaptureWatcher) {
+            clearInterval(screenCaptureWatcher);
+        }
+        
+        // 失敗カウンタをリセット
+        screenCaptureFailCount = 0;
+        
+        // 定期的にソースの存在を確認
+        screenCaptureWatcher = setInterval(async () => {
+            try {
+                const sources = await desktopCapturer.getSources({
+                    types: ['window', 'screen'],
+                    thumbnailSize: { width: 50, height: 50 }
+                });
+                
+                const sourceExists = sources.some(source => source.id === sourceId);
+                
+                if (!sourceExists) {
+                    screenCaptureFailCount++;
+                    console.log(`🔍 画面共有ソースが見つかりません (${screenCaptureFailCount}/2)`);
+                    
+                    // 2回連続で失敗した場合に停止（バランス調整）
+                    if (screenCaptureFailCount >= 2) {
+                        console.log('🚪 画面共有ウィンドウが閉じられました（確定）');
+                        clearInterval(screenCaptureWatcher);
+                        screenCaptureWatcher = null;
+                        screenCaptureFailCount = 0;
+                        
+                        // レンダラープロセスに通知
+                        if (mainWindow && !mainWindow.isDestroyed()) {
+                            mainWindow.webContents.send('screen-capture-window-closed');
+                        }
+                    }
+                } else {
+                    // ソースが見つかった場合はカウンタをリセット
+                    if (screenCaptureFailCount > 0) {
+                        console.log('✅ 画面共有ソースを再確認 - 継続中');
+                        screenCaptureFailCount = 0;
+                    }
+                }
+            } catch (error) {
+                console.error('画面共有ウィンドウ監視エラー:', error);
+            }
+        }, 5000); // 5秒ごとにチェック（誤検知防止）
+        
+        return { success: true };
+    } catch (error) {
+        console.error('画面共有ウィンドウ監視開始エラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('stop-screen-capture-monitoring', async () => {
+    if (screenCaptureWatcher) {
+        clearInterval(screenCaptureWatcher);
+        screenCaptureWatcher = null;
+        console.log('🛑 画面共有ウィンドウの監視を停止');
+    }
+    return { success: true };
+});
+
 // システムオーディオの録音（macOS専用）
 ipcMain.handle('start-system-audio-recording', async (event, outputPath) => {
     try {
         console.log('🎙️ システムオーディオ録音開始:', outputPath);
         
         // macOSのスクリーンキャプチャでオーディオも録音
+        // より安定した設定で録音
         const ffmpegArgs = [
             '-f', 'avfoundation',  // macOSのAVFoundationを使用
-            '-i', ':1',           // システムオーディオデバイス
-            '-acodec', 'pcm_s16le', // 音声コーデック
+            '-i', ':1',           // デバイス番号1（BlackHole 2ch）を使用
+            '-acodec', 'libmp3lame', // MP3エンコーディング
             '-ar', '44100',       // サンプリングレート
             '-ac', '2',           // ステレオ
+            '-b:a', '128k',       // ビットレート
+            '-t', '3600',         // 最大録音時間（1時間）
             '-y',                 // 上書き許可
-            outputPath
+            outputPath.replace('.webm', '.mp3') // 拡張子をMP3に変更
         ];
         
         const ffmpeg = spawn('ffmpeg', ffmpegArgs);
         
         ffmpeg.stderr.on('data', (data) => {
-            console.log('FFmpeg stderr:', data.toString());
+            console.error('FFmpeg stderr:', data.toString());
+        });
+        
+        ffmpeg.stdout.on('data', (data) => {
+            console.log('FFmpeg stdout:', data.toString());
         });
         
         ffmpeg.on('error', (error) => {
-            console.error('FFmpeg エラー:', error);
+            console.error('FFmpeg spawn エラー:', error);
+        });
+        
+        ffmpeg.on('exit', (code, signal) => {
+            console.log(`FFmpeg プロセス終了 - コード: ${code}, シグナル: ${signal}`);
+            if (code === 255 && signal === null) {
+                // SIGINTで正常終了した場合（code 255は正常）
+                console.log('✅ FFmpeg が正常終了しました (SIGINT)');
+            } else if (code !== 0 && code !== null && code !== 255) {
+                console.error(`FFmpeg が異常終了しました (exit code: ${code})`);
+            } else {
+                console.log('✅ FFmpeg が正常終了しました');
+            }
         });
         
         // プロセスIDを保存（停止用）
         global.audioRecordingProcess = ffmpeg;
+        
+        // プロセスが正常に開始されたか確認
+        setTimeout(() => {
+            if (ffmpeg.killed) {
+                console.error('FFmpeg プロセスが予期せず終了しました');
+                return { success: false, error: 'FFmpeg process died unexpectedly' };
+            }
+        }, 1000);
         
         return { success: true, processId: ffmpeg.pid };
         
@@ -598,6 +695,53 @@ ipcMain.handle('stop-system-audio-recording', async () => {
         return { success: false, error: '録音プロセスが見つかりません' };
     } catch (error) {
         console.error('録音停止エラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// システムオーディオファイル読み込み
+ipcMain.handle('read-system-audio-file', async (event, filePath) => {
+    try {
+        console.log('📖 システムオーディオファイル読み込み:', filePath);
+        const audioBuffer = fs.readFileSync(filePath);
+        return audioBuffer;
+    } catch (error) {
+        console.error('ファイル読み込みエラー:', error);
+        throw error;
+    }
+});
+
+// システムオーディオファイル削除
+ipcMain.handle('delete-system-audio-file', async (event, filePath) => {
+    try {
+        console.log('🗑️ システムオーディオファイル削除:', filePath);
+        fs.unlinkSync(filePath);
+        return { success: true };
+    } catch (error) {
+        console.error('ファイル削除エラー:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// デバッグファイル保存
+ipcMain.handle('save-debug-file', async (event, fileName, arrayBuffer) => {
+    try {
+        const targetPath = path.join(__dirname, fileName);
+        const debugDir = path.dirname(targetPath);
+        
+        // debugフォルダが存在しない場合は作成
+        if (!fs.existsSync(debugDir)) {
+            fs.mkdirSync(debugDir, { recursive: true });
+            console.log('📁 デバッグフォルダを作成:', debugDir);
+        }
+        
+        const buffer = Buffer.from(arrayBuffer);
+        fs.writeFileSync(targetPath, buffer);
+        console.log('💾 デバッグファイル保存:', targetPath);
+        
+        return { success: true, filePath: targetPath };
+    } catch (error) {
+        console.error('デバッグファイル保存エラー:', error);
         return { success: false, error: error.message };
     }
 });
